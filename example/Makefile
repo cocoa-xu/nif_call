@@ -10,8 +10,8 @@ ifeq ($(UNAME_S), Darwin)
     LDFLAGS += -flat_namespace -undefined dynamic_lookup
 endif
 
-SOURCES = c_src/nif_call.c
-OBJECTS = $(patsubst c_src/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
+SOURCES = c_src/demo_nif.cpp
+OBJECTS = $(patsubst c_src/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 
 all: $(NIF_SO)
 	@ echo > /dev/null
@@ -26,7 +26,7 @@ $(BUILD_DIR)/%.o: c_src/%.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@
 
 $(NIF_SO): $(PRIV_DIR) $(BUILD_DIR) $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $(NIF_SO) $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(OBJECTS) -o $(NIF_SO) $(LDFLAGS)
 
 clean:
 	@rm -rf $(PRIV_DIR)
