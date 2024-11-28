@@ -14,6 +14,7 @@ SOURCES = c_src/nif_call.c
 OBJECTS = $(patsubst c_src/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 all: $(NIF_SO)
+	@ echo > /dev/null
 
 $(PRIV_DIR):
 	@ mkdir -p $(PRIV_DIR)

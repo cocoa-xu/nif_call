@@ -9,17 +9,14 @@ defmodule Foo do
   ## Examples
 
       iex> Foo.compute(1, fn result -> result * 2 end)
-      10
+      4
 
   """
-  def compute(a, cb) do
-    Foo.NIF.compute_with_evaluator(a, 1, Process.whereis(NifCall.Evaluator), cb)
+  def compute(value, callback) do
+    Foo.NIF.compute(value, Process.whereis(Foo.Evaluator), callback)
   end
 
   def demo do
-    compute(1, fn result ->
-      IO.puts("Result: #{result}")
-      result * 2
-    end)
+    compute(1, &(&1 * 2))
   end
 end

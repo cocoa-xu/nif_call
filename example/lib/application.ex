@@ -6,10 +6,10 @@ defmodule NifCall.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {NifCall.Evaluator, []}
+      {Foo.Evaluator, [nif: Foo.NIF, process_options: [name: Foo.Evaluator]]}
     ]
 
-    opts = [strategy: :one_for_one, name: NifCall.Supervisor]
+    opts = [strategy: :one_for_one, name: Foo.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
