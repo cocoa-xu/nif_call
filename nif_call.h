@@ -5,6 +5,18 @@
 
 #include <erl_nif.h>
 
+#ifdef NIF_CALL_NAMESPACE
+#define NIF_CALL_CAT(A, B) A##B
+#define NIF_CALL_SYMBOL(A, B) NIF_CALL_CAT(A, B)
+
+#define CallbackNifRes NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, CallbackNifRes)
+#define nif_call_onload NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_onload)
+#define prepare_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, prepare_nif_call)
+#define make_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, make_nif_call)
+#define nif_call_evaluated NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_evaluated)
+#define destruct_nif_call_res NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, destruct_nif_call_res)
+#endif
+
 #define NIF_CALL_NIF_FUNC(name) \
   {#name, 2, nif_call_evaluated, 0}
 
