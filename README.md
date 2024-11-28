@@ -18,11 +18,15 @@ defp deps do
 end
 ```
 
-### 2. Copy necessary files
+### 2. Get the header file
 
-Copy `nif_call.h` to the `c_src` directory.
+It's recommended to use the `nif_call`'s mix task to get the bundled header file. Assuming you're currently in the root directory of your project, run the following command:
 
-It may look like this when putting these `.ex` files in the `lib/nif_call` and  `.h` in the `c_src` directory:
+```bash
+mix nif_call.put_header
+```
+
+By default, the header file will be put in the `c_src` directory.  It may look like this:
 
 ```bash
 .
@@ -36,6 +40,18 @@ It may look like this when putting these `.ex` files in the `lib/nif_call` and  
 │       └── demo.ex
 ├── mix.exs
 └── mix.lock
+```
+
+You can also change the directory by passing the `--dir` option.
+
+```bash
+mix nif_call.put_header --dir lib/nif_call
+```
+
+If there's already a `nif_call.h` file in the target directory, you may want to overwrite it by passing the `--overwrite` option.
+
+```bash
+mix nif_call.put_header --overwrite
 ```
 
 ### 3. Define Evaluator and NIF modules
