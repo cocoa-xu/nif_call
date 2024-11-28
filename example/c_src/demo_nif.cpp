@@ -63,7 +63,8 @@ static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
 }
 
 static ErlNifFunc nif_functions[] = {
-  // NIF functions that calls Elixir functions should be marked as dirty
+  // NIF functions that calls Elixir functions have to be marked as dirty
+  // either ERL_NIF_DIRTY_JOB_CPU_BOUND or ERL_NIF_DIRTY_JOB_IO_BOUND
   {"add_one", 3, add_one, ERL_NIF_DIRTY_JOB_CPU_BOUND},
   {"iterate", 3, iterate, ERL_NIF_DIRTY_JOB_CPU_BOUND},
 

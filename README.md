@@ -32,6 +32,7 @@ It may look like this when putting `.ex` files in the `lib/nif_call` directory:
 Define an Evaluator module in your project. The Evaluator module is responsible for evaluating the Erlang/Elixir code. 
 
 ```elixir
+# lib/demo/evaluator.ex
 defmodule Demo.Evaluator do
   use NifCall.Evaluator
 end
@@ -40,6 +41,7 @@ end
 To send the evaluated result back to the caller, `nif_call` needs to inject one NIF function to do that.
 
 ```elixir
+# lib/demo/nif.ex
 defmodule Demo.NIF do
   use NifCall.NIF
 end
@@ -48,12 +50,14 @@ end
 The default name of this function is `nif_call_evaluated`. You can change it by passing the desired name to the `on_evaluated` option, like this:
 
 ```elixir
+# lib/demo/evaluator.ex
 defmodule Demo.Evaluator do
   use NifCall.Evaluator, on_evaluated: :my_evaluated
 end
 ```
 
 ```elixir
+# lib/demo/nif.ex
 defmodule Demo.NIF do
   use NifCall.NIF, on_evaluated: :my_evaluated
 end
@@ -64,6 +68,7 @@ end
 In your NIF code, include `nif_call.h` and define the `NIF_CALL_IMPLEMENTATION` macro before including it.
 
 ```c
+// c_src/demo_nif.cpp
 #define NIF_CALL_IMPLEMENTATION
 #include "nif_call.h"
 ```
@@ -71,6 +76,7 @@ In your NIF code, include `nif_call.h` and define the `NIF_CALL_IMPLEMENTATION` 
 And remember to initialize nif_call in the `onload` function.
 
 ```c
+// c_src/demo_nif.cpp
 static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
   // initialize nif_call
   return nif_call_onload(env);
@@ -80,6 +86,7 @@ static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
 Lastly, inject the NIF function:
 
 ```c
+// c_src/demo_nif.cpp
 static ErlNifFunc nif_functions[] = {
   // ... your other NIF functions
 
@@ -100,6 +107,7 @@ Let's try to implement a simple function that adds 1 to the given value and send
 First, we need to start the Evaluator process in the Elixir code.
 
 ```elixir
+# lib/demo/application.ex
 defmodule Demo.Application do
   @moduledoc false
 
@@ -120,6 +128,7 @@ end
 Second, implement the `add_one` function in the Elixir code.
 
 ```elixir
+# lib/demo/demo.ex
 defmodule Demo do
   @doc """
   Add 1 to the `value` in NIF and send the intermediate result to
@@ -145,6 +154,7 @@ end
 After that, implement the `add_one` function in the NIF C code.
 
 ```c
+// c_src/demo_nif.cpp
 static ERL_NIF_TERM add_one(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
   ErlNifSInt64 a;
   ErlNifPid evaluator;
@@ -160,6 +170,23 @@ static ERL_NIF_TERM add_one(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 }
 ```
 
+Most importantly, don't forget to add the NIF function to the `nif_functions` array, and **they have to be marked as dirty NIF functions**.
+
+```c
+// c_src/demo_nif.cpp
+static ErlNifFunc nif_functions[] = {
+  // ... your other NIF functions
+
+  // inject nif_call functions
+  NIF_CALL_NIF_FUNC(nif_call_evaluated),
+
+  // add the NIF function
+  // NIF functions that calls Elixir functions have to be marked as dirty
+  // either ERL_NIF_DIRTY_JOB_CPU_BOUND or ERL_NIF_DIRTY_JOB_IO_BOUND
+  {"add_one", 3, add_one, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+};
+```
+
 Now, you can call the `add_one` function from Elixir.
 
 ```elixir
@@ -168,3 +195,6 @@ iex> Demo.add_one(1, fn result -> result * 2 end)
 ```
 
 Congratulations! You have successfully called an Elixir function from NIF.
+
+There's a slightly more complex example in the `example` directory, which shows that you can make multiple calls to Elixir functions from NIF and 
+use the intermediate results in the next call.
