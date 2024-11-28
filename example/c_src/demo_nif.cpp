@@ -1,6 +1,7 @@
 #include <erl_nif.h>
 #include <string.h>
 
+#define NIF_CALL_NAMESPACE demo
 #define NIF_CALL_IMPLEMENTATION
 #include "nif_call.h"
 

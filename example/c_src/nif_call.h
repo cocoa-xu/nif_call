@@ -5,6 +5,20 @@
 
 #include <erl_nif.h>
 
+#ifdef NIF_CALL_NAMESPACE
+#define NIF_CALL_CAT(A, B) A##B
+#define NIF_CALL_SYMBOL(A, B) NIF_CALL_CAT(A, B)
+#define NIF_CALL_STRINGIFY(x) #x
+#define NIF_CALL_NAMESPACE_STR NIF_CALL_STRINGIFY(NIF_CALL_CAT(NIF_CALL_NAMESPACE, _))
+
+#define CallbackNifRes NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, CallbackNifRes)
+#define nif_call_onload NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_onload)
+#define prepare_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, prepare_nif_call)
+#define make_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, make_nif_call)
+#define nif_call_evaluated NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_evaluated)
+#define destruct_nif_call_res NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, destruct_nif_call_res)
+#endif
+
 #define NIF_CALL_NIF_FUNC(name) \
   {#name, 2, nif_call_evaluated, 0}
 
@@ -47,14 +61,14 @@ CallbackNifRes * prepare_nif_call(ErlNifEnv* env) {
     return NULL;
   }
 
-  res->mtx = enif_mutex_create((char *)"nif_call_mutex");
+  res->mtx = enif_mutex_create((char *) NIF_CALL_NAMESPACE_STR "nif_call_mutex");
   if (!res->mtx) {
     enif_free_env(res->msg_env);
     enif_release_resource(res);
     return NULL;
   }
 
-  res->cond = enif_cond_create((char *)"nif_call_cond");
+  res->cond = enif_cond_create((char *) NIF_CALL_NAMESPACE_STR "nif_call_cond");
   if (!res->cond) {
     enif_free_env(res->msg_env);
     enif_mutex_destroy(res->mtx);
