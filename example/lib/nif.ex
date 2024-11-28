@@ -13,5 +13,6 @@ defmodule Foo.NIF do
   end
 
   def compute(_arg1, _arg2, _mf), do: :erlang.nif_error(:not_loaded)
+  def compute_with_evaluator(_arg1, _arg2, _evaluator, _mf), do: :erlang.nif_error(:not_loaded)
   def evaluated(_from_ref, _results), do: :erlang.nif_error(:not_loaded)
 end

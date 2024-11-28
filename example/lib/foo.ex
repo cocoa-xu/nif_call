@@ -13,14 +13,13 @@ defmodule Foo do
 
   """
   def compute(a, cb) do
-    NifCall.Evaluator.elixir_callback(fn b, c ->
-      # `a` and `cb` are captured from the outer scope
-      # `b` and `c` are the arguments passed from `NifCall.Evaluator.elixir_callback/2`
-      Foo.NIF.compute(a, b + c, cb)
-    end, [2, 3])
+    Foo.NIF.compute_with_evaluator(a, 1, Process.whereis(NifCall.Evaluator), cb)
   end
 
   def demo do
-    compute(1, fn result -> IO.puts("Result: #{result}") end)
+    compute(1, fn result ->
+      IO.puts("Result: #{result}")
+      result * 2
+    end)
   end
 end

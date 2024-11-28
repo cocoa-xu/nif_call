@@ -51,11 +51,28 @@ static ERL_NIF_TERM make_elixir_call(ErlNifEnv* env, ERL_NIF_TERM mf, ERL_NIF_TE
   CallbackNifRes *callback_res = prepare_nif_callback(env);
   ERL_NIF_TERM callback_term = enif_make_resource(env, (void *)callback_res);
 
-  enif_send(env, &callback_res->process, NULL, enif_make_tuple3(env,
+  ErlNifEnv * new_env = enif_alloc_env();
+  enif_send(env, &callback_res->process, new_env, enif_make_copy(new_env, enif_make_tuple3(env,
     mf,
     args,
     callback_term
-  ));
+  )));
+
+  enif_cond_wait(callback_res->cond, callback_res->mtx);
+  return callback_res->return_value;
+}
+
+
+static ERL_NIF_TERM make_elixir_call(ErlNifEnv* env, ERL_NIF_TERM mf, ErlNifPid evaluator, ERL_NIF_TERM args) {
+  CallbackNifRes *callback_res = prepare_nif_callback(env);
+  ERL_NIF_TERM callback_term = enif_make_resource(env, (void *)callback_res);
+
+  ErlNifEnv * new_env = enif_alloc_env();
+  enif_send(env, &evaluator, new_env, enif_make_copy(new_env, enif_make_tuple3(env,
+    mf,
+    args,
+    callback_term
+  )));
 
   enif_cond_wait(callback_res->cond, callback_res->mtx);
   return callback_res->return_value;
@@ -91,6 +108,18 @@ static ERL_NIF_TERM compute(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
   return make_elixir_call(env, fun_or_mfa, result_term);
 }
 
+static ERL_NIF_TERM compute_with_evaluator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+  ErlNifSInt64 a, b;
+  ERL_NIF_TERM fun_or_mfa = argv[3];
+
+  if (!enif_get_int64(env, argv[0], &a) || !enif_get_int64(env, argv[1], &b)) return enif_make_badarg(env);
+  ErlNifPid evaluator;
+  enif_get_local_pid(env, argv[2], &evaluator);
+  ERL_NIF_TERM result_term = enif_make_int64(env, a + b);
+
+  return make_elixir_call(env, fun_or_mfa, evaluator, result_term);
+}
+
 // ------- User code end -------
 
 static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
@@ -107,6 +136,7 @@ static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
 
 static ErlNifFunc nif_functions[] = {
   {"compute", 3, compute, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+  {"compute_with_evaluator", 4, compute_with_evaluator, ERL_NIF_DIRTY_JOB_CPU_BOUND},
   {"evaluated", 2, evaluated, 0}
 };
 
