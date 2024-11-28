@@ -1,12 +1,26 @@
 # nif_call
+
+[![Hex.pm](https://img.shields.io/hexpm/v/nif_call.svg?style=flat&color=blue)](https://hex.pm/packages/nif_call)
+
 Call Erlang/Elixir functions from NIF.
 
 ## Usage
 
-### 1. Copy necessary files
+### 1. Add `nif_call` as a dependency
 
-1. Copy `nif.ex` and `evaluator.ex` to your Elixir project's `lib` directory (you can also put them in any subdirectory under `lib`). 
-2. Copy `nif_call.h` to the `c_src` directory.
+Add `nif_call` as a dependency in your `mix.exs` file.
+
+```elixir
+defp deps do
+  [
+    {:nif_call, "~> 0.1"}
+  ]
+end
+```
+
+### 2. Copy necessary files
+
+Copy `nif_call.h` to the `c_src` directory.
 
 It may look like this when putting these `.ex` files in the `lib/nif_call` and  `.h` in the `c_src` directory:
 
@@ -17,17 +31,14 @@ It may look like this when putting these `.ex` files in the `lib/nif_call` and  
 │   ├── demo_nif.cpp
 │   └── nif_call.h          <-- From this repository
 ├── lib
-│   ├── demo
-│   │   ├── application.ex
-│   │   └── demo.ex
-│   └── nif_call
-│       ├── evaluator.ex    <-- From this repository
-│       └── nif.ex          <-- From this repository
+│   └── demo
+│       ├── application.ex
+│       └── demo.ex
 ├── mix.exs
 └── mix.lock
 ```
 
-### 2. Define Evaluator and NIF modules
+### 3. Define Evaluator and NIF modules
 
 Define an Evaluator module in your project. The Evaluator module is responsible for evaluating the Erlang/Elixir code. 
 
@@ -63,7 +74,7 @@ defmodule Demo.NIF do
 end
 ```
 
-### 3. Prepare C code
+### 4. Prepare C code
 
 In your NIF code, include `nif_call.h` and define the `NIF_CALL_IMPLEMENTATION` macro before including it.
 
@@ -100,7 +111,7 @@ static ErlNifFunc nif_functions[] = {
 };
 ```
 
-### 4. Call Erlang/Elixir functions from NIF
+### 5. Call Erlang/Elixir functions from NIF
 
 Let's try to implement a simple function that adds 1 to the given value and sends the intermediate result to Elixir for further processing. The result of the Elixir callback function is returned as the final result.
 
