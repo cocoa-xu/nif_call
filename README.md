@@ -8,7 +8,7 @@ Call Erlang/Elixir functions from NIF.
 1. Copy `nif.ex` and `evaluator.ex` to your Elixir project's `lib` directory (you can also put them in any subdirectory under `lib`). 
 2. Copy `nif_call.h` to the `c_src` directory.
 
-It may look like this when putting `.ex` files in the `lib/nif_call` directory:
+It may look like this when putting these `.ex` files in the `lib/nif_call` and  `.h` in the `c_src` directory:
 
 ```bash
 .
