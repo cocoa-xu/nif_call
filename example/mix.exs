@@ -14,8 +14,7 @@ defmodule Demo.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Demo.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
