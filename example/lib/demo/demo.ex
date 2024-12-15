@@ -7,14 +7,30 @@ defmodule Demo do
 
   The result of the `callback` function is returned as the final result.
 
-  ## Examples
+  ## Example
 
       iex> Demo.add_one(1, fn result -> result * 2 end)
       4
 
+  ## Example when the callback function throws an exception
+
+      iex> Demo.add_one(1, fn val ->
+      ...>   throw {val, :oh_nooooo}
+      ...> end)
+      {:throw, {2, :oh_nooooo}}
+
+  ## Examples when the callback function raises an exception
+
+      iex> Demo.add_one(1, fn val ->
+      ...>   raise RuntimeError, "cannot use this value: \#{val}"
+      ...> end)
+      {:error, %RuntimeError{message: "cannot use this value: 2"}}
+
   """
   def add_one(value, callback) do
-    Demo.NIF.add_one(value, Process.whereis(Demo.Evaluator), callback)
+    NifCall.run(Demo.Runner, callback, fn tag ->
+      Demo.NIF.add_one(value, tag)
+    end)
   end
 
   @doc """
@@ -40,6 +56,8 @@ defmodule Demo do
 
   """
   def iterate(initial_value, callback) do
-    Demo.NIF.iterate(initial_value, Process.whereis(Demo.Evaluator), callback)
+    NifCall.run(Demo.Runner, callback, fn tag ->
+      Demo.NIF.iterate(initial_value, tag)
+    end)
   end
 end

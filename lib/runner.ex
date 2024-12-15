@@ -1,8 +1,10 @@
 defmodule NifCall.Runner do
   use GenServer
 
+  defstruct [:nif_module, :on_evaluated, :refs]
+
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+    GenServer.start_link(__MODULE__, opts[:runner_opts], opts)
   end
 
   def register(name, function) when is_function(function, 1) do
@@ -13,32 +15,34 @@ defmodule NifCall.Runner do
     GenServer.call(name, {:unregister, ref}, :infinity)
   end
 
-  def init(:ok) do
-    {:ok, %{}}
+  def init(opts) do
+    opts = Keyword.validate!(opts, [:nif_module, on_evaluated: :nif_call_evaluated])
+    {:ok, %__MODULE__{nif_module: opts[:nif_module], on_evaluated: opts[:on_evaluated], refs: %{}}}
   end
 
   def handle_call({:register, owner, function}, _from, state) do
     ref = Process.monitor(owner)
-    {:reply, {self(), ref}, Map.put(state, ref, function)}
+    {:reply, {self(), ref}, %{state | refs: Map.put(state.refs, ref, function)}}
   end
 
   def handle_call({:unregister, ref}, _from, state) do
     Process.demonitor(ref, [:flush])
-    {:reply, :ok, Map.delete(state, ref)}
+    {:reply, :ok, %{state | refs: Map.delete(state.refs, ref)}}
   end
 
   def handle_info({:DOWN, ref, _, _, _}, state) do
-    {:noreply, Map.delete(state, ref)}
+    {:noreply, %{state | refs: Map.delete(state.refs, ref)}}
   end
 
-  def handle_info({:execute, resource, ref, arg}, state) do
-    function = Map.fetch!(state, ref)
+  def handle_info({:execute, resource, ref, args}, state) do
+    function = Map.fetch!(state.refs, ref)
 
     pid = spawn(fn ->
       try do
-        NifCall.NIF.back_to_c(resource, {:ok, function.(arg)})
+        apply(state.nif_module, state.on_evaluated, [resource, {:ok, apply(function, List.wrap(args))}])
       catch
-        kind, reason -> NifCall.NIF.back_to_c(resource, {kind, reason})
+        kind, reason ->
+          apply(state.nif_module, state.on_evaluated, [resource, {kind, reason}])
       end
     end)
 
@@ -48,7 +52,7 @@ defmodule NifCall.Runner do
 
   def handle_info({{:eval, resource}, _, _, _, reason}, state) do
     if reason != :normal do
-      NifCall.NIF.back_to_c(resource, {:exit, reason})
+      apply(state.nif_module, :nif_call_evaluated, [resource, {:exit, reason}])
     end
 
     {:noreply, state}

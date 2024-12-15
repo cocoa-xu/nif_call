@@ -2,7 +2,7 @@ defmodule NifCall.MixProject do
   use Mix.Project
 
   @app :nif_call
-  @version "0.1.0"
+  @version "0.1.1"
   @github_url "https://github.com/cocoa-xu/nif_call"
 
   def project do
@@ -12,7 +12,6 @@ defmodule NifCall.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      compilers: [:elixir_make] ++ Mix.compilers(),
       package: package(),
       docs: docs(),
       description: "Call Erlang/Elixir functions from NIF and use the returned value in NIF."
@@ -37,7 +36,6 @@ defmodule NifCall.MixProject do
 
   defp deps do
     [
-      {:elixir_make, "~> 0.9", runtime: false},
       {:ex_doc, ">= 0.0.0", only: :docs, runtime: false}
     ]
   end
@@ -46,7 +44,6 @@ defmodule NifCall.MixProject do
     [
       name: to_string(@app),
       files: ~w(
-        c_src
         lib
         mix.exs
         README*

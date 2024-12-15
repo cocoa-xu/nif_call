@@ -9,13 +9,13 @@
 
 static ERL_NIF_TERM add_one(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
   ErlNifSInt64 a;
-  ErlNifPid evaluator;
-  ERL_NIF_TERM fun = argv[2];
+  ERL_NIF_TERM tag = argv[1];
 
-  if (!enif_get_int64(env, argv[0], &a) || !enif_get_local_pid(env, argv[1], &evaluator)) return enif_make_badarg(env);
+  if (!enif_get_int64(env, argv[0], &a)) return enif_make_badarg(env);
   ERL_NIF_TERM result_term = enif_make_int64(env, a + 1);
 
-  return make_nif_call(env, evaluator, fun, result_term);
+  NifCallResult result = make_nif_call(env, tag, result_term);
+  return result.is_ok() ? result.get_value() : enif_make_tuple2(env, result.get_kind(), result.get_err());
 }
 
 // ------ demo 1 end ------
@@ -27,17 +27,17 @@ static ERL_NIF_TERM kAtomDone;
 
 static ERL_NIF_TERM iterate(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
   ErlNifSInt64 a;
-  ErlNifPid evaluator;
   ERL_NIF_TERM iterate_val = argv[0];
-  ERL_NIF_TERM fun = argv[2];
-
-  if (!enif_get_local_pid(env, argv[1], &evaluator)) return enif_make_badarg(env);
+  ERL_NIF_TERM tag = argv[1];
 
   while (true) {
     if (!enif_get_int64(env, iterate_val, &a)) return enif_make_badarg(env);
     ERL_NIF_TERM val = enif_make_int64(env, a * 2);
 
-    ERL_NIF_TERM callback_result = make_nif_call(env, evaluator, fun, val);
+    NifCallResult result = make_nif_call(env, tag, val);
+    if (!result.is_ok()) return enif_make_tuple2(env, result.get_kind(), result.get_err());
+
+    ERL_NIF_TERM callback_result = result.get_value();
     const ERL_NIF_TERM *tuple_elements = NULL;
     int tuple_arity = 0;
     if (!enif_get_tuple(env, callback_result, &tuple_arity, &tuple_elements) || tuple_arity != 2) return enif_make_badarg(env);
@@ -66,8 +66,8 @@ static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
 static ErlNifFunc nif_functions[] = {
   // NIF functions that calls Elixir functions have to be marked as dirty
   // either ERL_NIF_DIRTY_JOB_CPU_BOUND or ERL_NIF_DIRTY_JOB_IO_BOUND
-  {"add_one", 3, add_one, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-  {"iterate", 3, iterate, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+  {"add_one", 2, add_one, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+  {"iterate", 2, iterate, ERL_NIF_DIRTY_JOB_CPU_BOUND},
 
   // inject nif_call functions
   // `nif_call_evaluated` is the name of the callback function that will be called by nif_call
