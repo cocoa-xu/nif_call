@@ -5,31 +5,8 @@
 
 #include <erl_nif.h>
 
-#ifdef NIF_CALL_NAMESPACE
-#define NIF_CALL_CAT(A, B) A##B
-#define NIF_CALL_SYMBOL(A, B) NIF_CALL_CAT(A, B)
-
-#define CallbackNifRes NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, CallbackNifRes)
-#define nif_call_onload NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_onload)
-#define prepare_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, prepare_nif_call)
-#define make_nif_call NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, make_nif_call)
-#define nif_call_evaluated NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, nif_call_evaluated)
-#define destruct_nif_call_res NIF_CALL_SYMBOL(NIF_CALL_NAMESPACE, destruct_nif_call_res)
-#endif
-
 #define NIF_CALL_NIF_FUNC(name) \
   {#name, 2, nif_call_evaluated, 0}
-
-#ifndef NIF_CALL_IMPLEMENTATION
-
-struct CallbackNifRes;
-static int nif_call_onload(ErlNifEnv *env);
-static CallbackNifRes * prepare_nif_call(ErlNifEnv* env);
-static ERL_NIF_TERM make_nif_call(ErlNifEnv* caller_env, ErlNifPid evaluator, ERL_NIF_TERM fun, ERL_NIF_TERM args);
-static ERL_NIF_TERM nif_call_evaluated(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
-static void destruct_nif_call_res(ErlNifEnv *, void *obj);
-
-#else
 
 struct CallbackNifRes {
   static ErlNifResourceType *type;
@@ -144,7 +121,5 @@ static int nif_call_onload(ErlNifEnv *env) {
   loaded = 1;
   return 0;
 }
-
-#endif
 
 #endif  // NIF_CALL_H

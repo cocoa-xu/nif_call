@@ -12,6 +12,7 @@ defmodule NifCall.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      compilers: [:elixir_make] ++ Mix.compilers(),
       package: package(),
       docs: docs(),
       description: "Call Erlang/Elixir functions from NIF and use the returned value in NIF."
@@ -36,6 +37,7 @@ defmodule NifCall.MixProject do
 
   defp deps do
     [
+      {:elixir_make, "~> 0.9", runtime: false},
       {:ex_doc, ">= 0.0.0", only: :docs, runtime: false}
     ]
   end
@@ -44,7 +46,7 @@ defmodule NifCall.MixProject do
     [
       name: to_string(@app),
       files: ~w(
-        nif_call.h
+        c_src
         lib
         mix.exs
         README*
