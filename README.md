@@ -54,16 +54,37 @@ If there's already a `nif_call.h` file in the target directory, you may want to 
 mix nif_call.put_header --overwrite
 ```
 
-### 3. Define Evaluator and NIF modules
+### 3. Add runner processes to your supervision tree
 
-Define an Evaluator module in your project. The Evaluator module is responsible for evaluating the Erlang/Elixir code. 
+In applications that use `nif_call`, you need to add runner processes to the supervision tree. The runner processes are responsible for evaluating the Elixir functions called from NIF. In this demo project, we will add a runner process named `Demo.Runner` by adding the following code to the `lib/demo/application.ex` file.
 
 ```elixir
-# lib/demo/evaluator.ex
-defmodule Demo.Evaluator do
-  use NifCall.Evaluator
+{NifCall.Runner, runner_opts: [nif_module: Demo.NIF, on_evaluated: :nif_call_evaluated], name: Demo.Runner}
+```
+
+The `application.ex` file should look like this:
+
+```elixir
+defmodule Demo.Application do
+  @moduledoc false
+
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children = [
+      {NifCall.Runner,
+       runner_opts: [nif_module: Demo.NIF, on_evaluated: :nif_call_evaluated], name: Demo.Runner}
+    ]
+
+    opts = [strategy: :one_for_one, name: Demo.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
 end
 ```
+
+
+`Demo.NIF` is the module that contains your NIF functions. The `on_evaluated` option is the name of the callback function that will be called by `nif_call` to send the evaluated result back to the caller. The default name is `nif_call_evaluated`.
 
 To send the evaluated result back to the caller, `nif_call` needs to inject one NIF function to do that.
 
@@ -74,14 +95,7 @@ defmodule Demo.NIF do
 end
 ```
 
-The default name of this function is `nif_call_evaluated`. You can change it by passing the desired name to the `on_evaluated` option, like this:
-
-```elixir
-# lib/demo/evaluator.ex
-defmodule Demo.Evaluator do
-  use NifCall.Evaluator, on_evaluated: :my_evaluated
-end
-```
+If you have changed the name of the callback function for the runner process, you need to specify it in the `on_evaluated` option.
 
 ```elixir
 # lib/demo/nif.ex
@@ -131,28 +145,7 @@ static ErlNifFunc nif_functions[] = {
 
 Let's try to implement a simple function that adds 1 to the given value and sends the intermediate result to Elixir for further processing. The result of the Elixir callback function is returned as the final result.
 
-First, we need to start the Evaluator process in the Elixir code.
-
-```elixir
-# lib/demo/application.ex
-defmodule Demo.Application do
-  @moduledoc false
-
-  use Application
-
-  @impl true
-  def start(_type, _args) do
-    children = [
-      {Demo.Evaluator, [nif_module: Demo.NIF, process_options: [name: Demo.Evaluator]]}
-    ]
-
-    opts = [strategy: :one_for_one, name: Demo.Supervisor]
-    Supervisor.start_link(children, opts)
-  end
-end
-```
-
-Second, implement the `add_one` function in the Elixir code.
+Firstly, implement the `add_one` function in the Elixir code.
 
 ```elixir
 # lib/demo/demo.ex
@@ -175,6 +168,20 @@ defmodule Demo do
     evaluator = Process.whereis(Demo.Evaluator)
     Demo.NIF.add_one(value, evaluator, callback)
   end
+  def add_one(value, callback) do
+    # Use `NifCall.run/3` to call the NIF function
+    # 
+    # - The second argument is the callback function that will be called from the NIF
+    #
+    # - The third argument is the function that can invoke somes NIF functions,
+    #   this is where you normally call the NIF function
+    #
+    #   notice that the third argument is a function that takes a `tag` as an argument
+    #   the `tag` is used as a reference to the callback function in your `Demo.Runner` process
+    NifCall.run(Demo.Runner, callback, fn tag ->
+      Demo.NIF.add_one(value, tag)
+    end)
+  end
 end
 ```
 
@@ -184,16 +191,16 @@ After that, implement the `add_one` function in the NIF C code.
 // c_src/demo_nif.cpp
 static ERL_NIF_TERM add_one(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
   ErlNifSInt64 a;
-  ErlNifPid evaluator;
-  ERL_NIF_TERM fun = argv[2];
+  ERL_NIF_TERM tag = argv[1];
 
-  if (!enif_get_int64(env, argv[0], &a) || !enif_get_local_pid(env, argv[1], &evaluator)) return enif_make_badarg(env);
+  if (!enif_get_int64(env, argv[0], &a)) return enif_make_badarg(env);
   ERL_NIF_TERM result_term = enif_make_int64(env, a + 1);
 
   // send the intermediate result to Elixir for further processing
   // `make_nif_call` will return the result of the callback function
   // which is the final result in this case
-  return make_nif_call(env, evaluator, fun, result_term);
+  NifCallResult result = make_nif_call(env, tag, result_term);
+  return result.is_ok() ? result.get_value() : enif_make_tuple2(env, enif_make_atom(env, "error"), result.get_err());
 }
 ```
 

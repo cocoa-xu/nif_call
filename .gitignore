@@ -28,3 +28,5 @@ nif_call-*.tar
 .DS_Store
 
 .elixir_ls
+
+/example/c_src/nif_call.h

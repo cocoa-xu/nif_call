@@ -6,7 +6,8 @@ defmodule Demo.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Demo.Evaluator, [nif_module: Demo.NIF, process_options: [name: Demo.Evaluator]]}
+      {NifCall.Runner,
+       runner_opts: [nif_module: Demo.NIF, on_evaluated: :nif_call_evaluated], name: Demo.Runner}
     ]
 
     opts = [strategy: :one_for_one, name: Demo.Supervisor]

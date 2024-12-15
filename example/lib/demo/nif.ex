@@ -14,6 +14,7 @@ defmodule Demo.NIF do
     end
   end
 
-  def add_one(_arg, _evaluator, _fun), do: :erlang.nif_error(:not_loaded)
-  def iterate(_arg, _evaluator, _fun), do: :erlang.nif_error(:not_loaded)
+  def add_one(_arg, _tag), do: :erlang.nif_error(:not_loaded)
+  def iterate(_arg, _tag), do: :erlang.nif_error(:not_loaded)
+  def callback_throws(_arg, _tag), do: :erlang.nif_error(:not_loaded)
 end
