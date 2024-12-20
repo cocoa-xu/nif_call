@@ -2,7 +2,7 @@ defmodule NifCall.MixProject do
   use Mix.Project
 
   @app :nif_call
-  @version "0.1.1"
+  @version "0.1.2"
   @github_url "https://github.com/cocoa-xu/nif_call"
 
   def project do
@@ -46,6 +46,7 @@ defmodule NifCall.MixProject do
       files: ~w(
         lib
         mix.exs
+        nif_call.h
         README*
         LICENSE*
       ),
