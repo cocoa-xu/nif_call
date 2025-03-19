@@ -2,7 +2,7 @@ defmodule NifCall.MixProject do
   use Mix.Project
 
   @app :nif_call
-  @version "0.1.3"
+  @version "0.2.0"
   @github_url "https://github.com/cocoa-xu/nif_call"
 
   def project do

@@ -229,6 +229,3 @@ iex> Demo.add_one(1, fn result -> result * 2 end)
 ```
 
 Congratulations! You have successfully called an Elixir function from NIF.
-
-There's a slightly more complex example in the `example` directory, which shows that you can make multiple calls to Elixir functions from NIF and 
-use the intermediate results in the next call.
