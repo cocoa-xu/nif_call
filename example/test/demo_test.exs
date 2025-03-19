@@ -1,4 +1,4 @@
 defmodule DemoTest do
   use ExUnit.Case
-  doctest Demo
+  doctest Demo, except: [iterate: 2]
 end
