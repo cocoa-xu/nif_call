@@ -13,7 +13,7 @@ Add `nif_call` as a dependency in your `mix.exs` file.
 ```elixir
 defp deps do
   [
-    {:nif_call, "~> 0.1"}
+    {:nif_call, "~> 0.2"}
   ]
 end
 ```
