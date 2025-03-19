@@ -22,7 +22,7 @@ defmodule Demo.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.9", runtime: false},
-      {:nif_call, "~> 0.1.0", path: ".."}
+      {:nif_call, path: ".."}
     ]
   end
 end

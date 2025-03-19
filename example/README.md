@@ -10,7 +10,7 @@ by adding `nif_call` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:nif_call, "~> 0.1.0"}
+    {:nif_call, "~> 0.2.0"}
   ]
 end
 ```
